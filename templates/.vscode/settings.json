@@ -64,7 +64,8 @@
   "java.configuration.runtimes": [
     {
       "name": "JavaSE-17",
-      "path": "/usr/local/sdkman/candidates/java/current"
+      "path": "/usr/local/sdkman/candidates/java/current",
+      "default": true
     }
   ]
 }
