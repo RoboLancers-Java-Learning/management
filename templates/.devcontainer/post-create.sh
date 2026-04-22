@@ -19,6 +19,11 @@ apt-get update && apt-get install -y \
   wget
 
 cd /tmp
+# Install WPILib VS Code extension manually from GitHub release.
+# We do this in post-create (not in devcontainer.json extensions list) because:
+# 1. The marketplace version may lag behind the latest 2026 release
+# 2. We need the exact 2026.2.1 version to match GradleRIO 2026.2.1
+# 3. Manual extraction ensures deterministic, reproducible extension version
 wget 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix'
 # "code" CLI is not available inside the container, so unpack the VSIX manually.
 # VS Code Server loads extensions from ~/.vscode-server/extensions/.
