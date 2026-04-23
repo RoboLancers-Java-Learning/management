@@ -19,13 +19,18 @@ sudo apt-get update && sudo apt-get install -y \
   wget
 
 # Install the WPILib VS Code extension for GitHub Codespaces.
-# The Dockerfile pre-populates ~/.vscode-server/extensions/ for local devcontainers,
-# but Codespaces uses a different VS Code Server path, so that layer has no effect there.
-# The Codespaces-provided code CLI installs into the correct location for that environment.
-# || true makes this a no-op on local devcontainers where the CLI isn't wired up.
-wget -q 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix' -O /tmp/vscode-wpilib.vsix
-code --install-extension /tmp/vscode-wpilib.vsix --force 2>/dev/null || true
-rm -f /tmp/vscode-wpilib.vsix
+# The Dockerfile layer handles local devcontainers (files exist before VS Code Server starts).
+# In Codespaces, VS Code Server uses a path the Dockerfile layer cannot reach, so we
+# extract the VSIX at runtime and also try the code CLI to register it in the running server.
+if [ "${CODESPACES}" = "true" ]; then
+  wget -q 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix' -O /tmp/vscode-wpilib.vsix
+  EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
+  mkdir -p "$EXT_DIR"
+  unzip -o /tmp/vscode-wpilib.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
+  cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
+
+  rm -rf /tmp/vscode-wpilib-unpack /tmp/vscode-wpilib.vsix
+fi
 
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
 # The extension checks ~/wpilib/2026/jdk/ to configure java.jdt.ls.java.home.
@@ -173,10 +178,7 @@ EOF
 
 # Pre-populate the Gradle cache with WPILib and vendor JARs.
 # Without this, the Java Language Server has no classpath and IntelliSense shows nothing.
-# Skip this if gradlew doesn't exist (e.g., in the management repo which is not a robot code repo).
-if [ -f "gradlew" ]; then
-  chmod +x gradlew
-  ./gradlew dependencies --no-daemon -q
-fi
+chmod +x gradlew
+./gradlew dependencies --no-daemon -q
 
 echo "WPILib devcontainer setup complete"
