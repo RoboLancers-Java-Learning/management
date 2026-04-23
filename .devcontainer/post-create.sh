@@ -2,12 +2,12 @@
 set -e
 
 # Install system dependencies for WPILib simulation
-apt-get update && apt-get install -y \
+sudo apt-get update && sudo apt-get install -y \
   build-essential \
   cmake \
   pkg-config \
-  libgl1-mesa-glx \
-  libgl1-mesa-dev \
+  libgl1 \
+  libgl-dev \
   libxrender1 \
   libxrandr2 \
   libxinerama1 \
@@ -18,16 +18,15 @@ apt-get update && apt-get install -y \
   x11-apps \
   wget
 
-cd /tmp
-wget 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix'
-# "code" CLI is not available inside the container, so unpack the VSIX manually.
-# VS Code Server loads extensions from ~/.vscode-server/extensions/.
-EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
-mkdir -p "$EXT_DIR"
-unzip -o /tmp/vscode-wpilib-2026.2.1.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
-cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
-rm -rf /tmp/vscode-wpilib-unpack /tmp/vscode-wpilib-2026.2.1.vsix
-cd -
+# Install the WPILib VS Code extension for GitHub Codespaces.
+# The Dockerfile pre-populates ~/.vscode-server/extensions/ for local devcontainers,
+# but Codespaces uses a different VS Code Server path, so that layer has no effect there.
+# The Codespaces-provided code CLI installs into the correct location for that environment.
+# || true makes this a no-op on local devcontainers where the CLI isn't wired up.
+wget -q 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix' -O /tmp/vscode-wpilib.vsix
+code --install-extension /tmp/vscode-wpilib.vsix --force 2>/dev/null || true
+rm -f /tmp/vscode-wpilib.vsix
+
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
 # The extension checks ~/wpilib/2026/jdk/ to configure java.jdt.ls.java.home.
 # We symlink to the system JDK installed by the devcontainer Java feature.
@@ -44,6 +43,12 @@ echo "Using JDK at: $WPILIB_JDK"
 mkdir -p ~/wpilib/2026
 ln -sf "$WPILIB_JDK" ~/wpilib/2026/jdk
 mkdir -p ~/wpilib/2026/maven  # Gradle checks this path (settings.gradle pluginManagement)
+
+# Clear the VS Code Java Language Server cache to remove stale runtime configurations
+# that may have been cached from a previous dev container or host machine.
+# This prevents "Invalid runtime for JavaSE-17" errors from cached configs pointing to
+# non-existent paths like /home/carl/wpilib/2026/jdk.
+rm -rf ~/.vscode-server/data/User/workspaceStorage/*/redhat.java
 
 # Write java.jdt.ls.java.home into .vscode/settings.json so the Java language server
 # uses the same JDK as WPILib. ${containerEnv:HOME} is not expanded in devcontainer
