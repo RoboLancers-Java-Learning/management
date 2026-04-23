@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Configure git hooks
+git config core.hooksPath .githooks
+
+# Install UV (Python package manager) - allow this to fail gracefully
+curl -LsSf https://astral.sh/uv/install.sh | sh || true
+
 # Install system dependencies for WPILib simulation
 apt-get update && apt-get install -y \
   build-essential \

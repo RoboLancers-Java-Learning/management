@@ -28,7 +28,15 @@
       "extensions": [
         "vscjava.vscode-java-pack",
         "vscjava.vscode-gradle"
-      ]
+      ],
+      // "settings": {
+      //   "mcp.servers": {
+      //     "frc-docs": {
+      //       "command": "/home/vscode/.local/bin/uvx",
+      //       "args": ["first-agentic-csa"]
+      //     }
+      //   }
+      // }
     }
   }
 }
