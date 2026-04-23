@@ -173,7 +173,10 @@ EOF
 
 # Pre-populate the Gradle cache with WPILib and vendor JARs.
 # Without this, the Java Language Server has no classpath and IntelliSense shows nothing.
-chmod +x gradlew
-./gradlew dependencies --no-daemon -q
+# Skip this if gradlew doesn't exist (e.g., in the management repo which is not a robot code repo).
+if [ -f "gradlew" ]; then
+  chmod +x gradlew
+  ./gradlew dependencies --no-daemon -q
+fi
 
 echo "WPILib devcontainer setup complete"
