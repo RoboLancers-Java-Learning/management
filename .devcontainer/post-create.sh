@@ -21,16 +21,24 @@ sudo apt-get update && sudo apt-get install -y \
 # Install the WPILib VS Code extension for GitHub Codespaces.
 # The Dockerfile pre-extracts the VSIX into /home/vscode/.vscode-server/extensions/ at
 # image-build time, which works for local devcontainers (user: vscode).
-# In Codespaces the user is `codespace`, so that baked-in path is never seen. Instead we
-# extract the VSIX here during postCreateCommand, before VS Code Server starts its first
-# user session, so the extension directory is present when the server scans on connect.
+# In Codespaces, VS Code Server starts early (before postCreateCommand finishes) and has
+# already scanned the extensions directory, so file-dropping is too late. We must use the
+# `code` CLI to register the extension with the running server. The binary is not on PATH
+# in a non-interactive shell, so we locate it inside the VS Code Server installation.
 if [ "${CODESPACES}" = "true" ]; then
   wget -q 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix' -O /tmp/vscode-wpilib.vsix
-  EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
-  mkdir -p "$EXT_DIR"
-  unzip -o /tmp/vscode-wpilib.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
-  cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
-  rm -rf /tmp/vscode-wpilib-unpack /tmp/vscode-wpilib.vsix
+  CODE_BIN=$(find "$HOME/.vscode-server/bin" -name "code" -path "*/remote-cli/*" 2>/dev/null | head -1)
+  if [ -n "$CODE_BIN" ]; then
+    "$CODE_BIN" --install-extension /tmp/vscode-wpilib.vsix
+  else
+    echo "Warning: could not find VS Code Server CLI; extracting VSIX manually as fallback"
+    EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
+    mkdir -p "$EXT_DIR"
+    unzip -o /tmp/vscode-wpilib.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
+    cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
+    rm -rf /tmp/vscode-wpilib-unpack
+  fi
+  rm -f /tmp/vscode-wpilib.vsix
 fi
 
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
@@ -177,9 +185,12 @@ cat > "$TOOLS_DIR/tools.json" << EOF
 ]
 EOF
 
-# Pre-populate the Gradle cache with WPILib and vendor JARs.
+# Pre-populate the Gradle cache with WPILib and vendor JARs if a project wrapper exists.
 # Without this, the Java Language Server has no classpath and IntelliSense shows nothing.
-chmod +x gradlew
-./gradlew dependencies --no-daemon -q
+# Skipped in repos (like this management repo) that have no root-level Gradle project.
+if [ -f gradlew ]; then
+  chmod +x gradlew
+  ./gradlew dependencies --no-daemon -q
+fi
 
 echo "WPILib devcontainer setup complete"
