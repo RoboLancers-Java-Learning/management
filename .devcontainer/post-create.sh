@@ -19,17 +19,13 @@ sudo apt-get update && sudo apt-get install -y \
   wget
 
 # Install the WPILib VS Code extension for GitHub Codespaces.
-# The Dockerfile layer handles local devcontainers (files exist before VS Code Server starts).
-# In Codespaces, VS Code Server uses a path the Dockerfile layer cannot reach, so we
-# extract the VSIX at runtime and also try the code CLI to register it in the running server.
+# The Dockerfile layer pre-extracts the VSIX for local devcontainers (vscode user, known path).
+# In Codespaces the user is `codespace` so that path is wrong; use the `code` CLI instead,
+# which communicates with the already-running VS Code Server to register the extension properly.
 if [ "${CODESPACES}" = "true" ]; then
   wget -q 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix' -O /tmp/vscode-wpilib.vsix
-  EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
-  mkdir -p "$EXT_DIR"
-  unzip -o /tmp/vscode-wpilib.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
-  cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
-
-  rm -rf /tmp/vscode-wpilib-unpack /tmp/vscode-wpilib.vsix
+  code --install-extension /tmp/vscode-wpilib.vsix
+  rm /tmp/vscode-wpilib.vsix
 fi
 
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
