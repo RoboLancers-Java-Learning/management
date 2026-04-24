@@ -2,6 +2,7 @@
   "name": "WPILib Robot Development",
   "build": { "dockerfile": "Dockerfile" },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postAttachCommand": "bash .devcontainer/post-attach.sh",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
       "version": "21",
