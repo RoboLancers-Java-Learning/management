@@ -204,7 +204,6 @@ jobs:
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
           mkdir -p src/main/deploy
           cp -r ../management/${{inputs.lesson_name}}/src/main/java/frc/robot/* src/main/java/frc/robot/
-          cp ../management/${{inputs.lesson_name}}/src/main/deploy/example.txt src/main/deploy/
 
           # Copy vendordeps directory
           mkdir -p vendordeps
