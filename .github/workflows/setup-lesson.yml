@@ -68,7 +68,7 @@ jobs:
             # Initialize the repository with an initial commit
             TEMP_DIR=$(mktemp -d)
             cd $TEMP_DIR
-            git init
+            git init -b main
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             echo "# ${{ steps.repo-name.outputs.repository_short_name }}" > README.md
@@ -76,7 +76,6 @@ jobs:
             echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name }} " >> README.md
             git add README.md
             git commit -m "chore: initial commit"
-            git branch -M main
             git remote add origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git"
             git push -u origin main
             cd -
