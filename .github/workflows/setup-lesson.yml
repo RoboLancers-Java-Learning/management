@@ -113,7 +113,7 @@ jobs:
           git add .devcontainer
 
           if git diff --staged --quiet; then
-            echo "✅ D(Write your answer here)_evcontainer configuration already exists and is up to date!"
+            echo "✅ Devcontainer configuration already exists and is up to date!"
           else
             git commit -m "chore: add devcontainer configuration"
             git push
@@ -271,4 +271,4 @@ jobs:
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
           echo "  - Go to [${{ steps.repo-name.outputs.repository_name }}](https://github.com/${{ steps.repo-name.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
-          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer/devcontainer.json" >> $GITHUB_STEP_SUMMARY
+          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer" >> $GITHUB_STEP_SUMMARY
