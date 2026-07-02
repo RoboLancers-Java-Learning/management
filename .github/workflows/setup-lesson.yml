@@ -1,4 +1,4 @@
-name: Setup Repository
+name: Setup Lesson
 
 on:
   workflow_dispatch:
@@ -129,7 +129,7 @@ jobs:
           cp -r ../management/${{inputs.lesson_name}}/.githooks .githooks
 
           # Make hooks executable
-          chmod +x .githooks/pre-commit .githooks/commit-msg
+          chmod +x .githooks/pre-push
 
           # Remove README from hooks directory (not needed in deployed repos)
           rm -f .githooks/README.md
