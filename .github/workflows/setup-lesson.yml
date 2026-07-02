@@ -1,0 +1,274 @@
+name: Setup Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      lesson_name:
+        description: "lesson name"
+        required: true
+        type: choice
+        options:
+          - "Basic-DriveTrain-Talon"
+      year:
+        description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
+        required: false
+        type: string
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Construct Repository Name
+        id: repo-name
+        run: |
+          # Use current year if not provided
+          YEAR="${{ inputs.year }}"
+          if [ -z "$YEAR" ]; then
+            YEAR=$(date +%Y)
+            echo "No year provided, using current year: $YEAR"
+          fi
+
+          REPO_SHORT_NAME="${{ inputs.lesson_name }}-$YEAR"
+          REPO_FULL_NAME="${{ github.repository_owner }}/$REPO_SHORT_NAME"
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+          echo "repository_short_name=$REPO_SHORT_NAME" >> $GITHUB_OUTPUT
+          echo "repository_name=$REPO_FULL_NAME" >> $GITHUB_OUTPUT
+          echo "Repository name: $REPO_FULL_NAME"
+
+      - name: Create Repository
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          echo "Creating repository ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Check if repository already exists
+          if gh repo view ${{ steps.repo-name.outputs.repository_name }} &>/dev/null; then
+            echo "✅ Repository already exists!"
+          else
+            # Create the repository with README to initialize main branch
+            gh repo create ${{ steps.repo-name.outputs.repository_name }} \
+              --public \
+              --description "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.competition_name }} (Team ${{ inputs.team_number }})" \
+              --clone=false
+            
+            echo "✅ Repository created successfully!"
+            
+            # Initialize the repository with an initial commit
+            TEMP_DIR=$(mktemp -d)
+            cd $TEMP_DIR
+            git init
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            echo "# ${{ steps.repo-name.outputs.repository_short_name }}" > README.md
+            echo "" >> README.md
+            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name_name }} " >> README.md
+            git add README.md
+            git commit -m "chore: initial commit"
+            git branch -M ${{ inputs.target_branch }}
+            git remote add origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git"
+            git push -u origin ${{ inputs.target_branch }}
+            cd -
+            rm -rf $TEMP_DIR
+            
+            echo "✅ Repository initialized with ${{ inputs.target_branch }} branch!"
+          fi
+
+      - name: Checkout management repository
+        uses: actions/checkout@v4
+        with:
+          path: management
+
+      - name: Clone target repository
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          git clone "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git" target-repo
+          cd target-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Devcontainer Configuration
+        run: |
+          cd target-repo
+          echo "Setting up devcontainer configuration for ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Create .devcontainer directory if it doesn't exist
+          mkdir -p .devcontainer
+
+          # Copy devcontainer from templates directory
+          cp ../management/${{inputs.lesson_name}}/.devcontainer/devcontainer.json .devcontainer/devcontainer.json
+
+          # Add devcontainer.json to git
+          git add .devcontainer/devcontainer.json
+
+          if git diff --staged --quiet; then
+            echo "✅ Devcontainer configuration already exists and is up to date!"
+          else
+            git commit -m "chore: add devcontainer configuration"
+            git push
+            echo "✅ Devcontainer configuration created and committed!"
+          fi
+      - name: Setup Git Hooks
+        run: |
+          cd target-repo
+          echo "Setting up git hooks for ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Copy git hooks from templates directory
+          cp -r ../management/${{inputs.lesson_name}}/.githooks .githooks
+
+          # Make hooks executable
+          chmod +x .githooks/pre-commit .githooks/commit-msg
+
+          # Remove README from hooks directory (not needed in deployed repos)
+          rm -f .githooks/README.md
+
+          # Commit and push if there are changes
+          git add .githooks/
+
+          if git diff --staged --quiet; then
+            echo "✅ Git hooks already exist and are up to date!"
+          else
+            git commit -m "chore: add git hooks"
+            git push
+            echo "✅ Git hooks created and committed!"
+          fi
+
+      - name: Setup CI Workflow
+        run: |
+          cd target-repo
+          echo "Setting up CI workflow for ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Create .github/workflows directory if it doesn't exist
+          mkdir -p .github/workflows
+
+          # Copy build.yml from templates
+          cp ../management/${{inputs.lesson_name}}/.github/workflows/build.yml .github/workflows/build.yml
+
+          # Commit and push if there are changes
+          git add .github/workflows/build.yml
+
+          if git diff --staged --quiet; then
+            echo "✅ CI workflow already exists and is up to date!"
+          else
+            git commit -m "ci: add build workflow"
+            git push
+            echo "✅ CI workflow created and committed!"
+          fi
+
+      - name: Setup WPILib Project Files
+        run: |
+          cd target-repo
+          echo "Setting up WPILib project files for ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Copy .vscode settings
+          mkdir -p .vscode
+          cp -r ../management/${{inputs.lesson_name}}/.vscode/* .vscode/
+
+          # Copy .wpilib preferences and update with team number and year
+          mkdir -p .wpilib
+          cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
+
+          # Update team number and project year in wpilib_preferences.json
+          sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
+          sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ steps.repo-name.outputs.year }}"/' .wpilib/wpilib_preferences.json
+
+          # Copy Gradle wrapper and build files
+          mkdir -p gradle/wrapper
+          cp ../management/${{inputs.lesson_name}}/gradle/wrapper/* gradle/wrapper/
+          cp ../management/${{inputs.lesson_name}}/gradlew .
+          cp ../management/${{inputs.lesson_name}}/gradlew.bat .
+          chmod +x gradlew
+
+          # Copy build configuration files
+          cp ../management/${{inputs.lesson_name}}/build.gradle .
+          cp ../management/${{inputs.lesson_name}}/settings.gradle .
+
+          # Copy .gitignore
+          cp ../management/${{inputs.lesson_name}}/.gitignore .
+
+          # Copy WPILib license
+          cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
+
+          # Copy source code structure
+          mkdir -p src/main/java/frc/robot/{commands,subsystems}
+          mkdir -p src/main/deploy
+          cp -r ../management/${{inputs.lesson_name}}/src/main/java/frc/robot/* src/main/java/frc/robot/
+          cp ../management/${{inputs.lesson_name}}/src/main/deploy/example.txt src/main/deploy/
+
+          # Copy vendordeps directory
+          mkdir -p vendordeps
+          cp ../management/${{inputs.lesson_name}}/vendordeps/* vendordeps/
+
+          # Commit and push if there are changes
+          git add .vscode/ .wpilib/ gradle/ gradlew gradlew.bat build.gradle settings.gradle .gitignore WPILib-License.md src/ vendordeps/
+
+          if git diff --staged --quiet; then
+            echo "✅ WPILib project files already exist and are up to date!"
+          else
+            git commit -m "chore: add WPILib project structure"
+            git push
+            echo "✅ WPILib project files created and committed!"
+          fi
+
+      - name: Apply Repository Settings
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          echo "Applying repository settings to ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Update repository settings
+          gh api \
+            --method PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "/repos/${{ steps.repo-name.outputs.repository_name }}" \
+            -f has_issues=true \
+            -f has_projects=false \
+            -f has_wiki=false \
+            -f has_discussions=false \
+            -f allow_squash_merge=true \
+            -f allow_merge_commit=false \
+            -f allow_rebase_merge=true \
+            -f allow_auto_merge=true \
+            -f delete_branch_on_merge=true \
+            -f allow_update_branch=true \
+            -f squash_merge_commit_title="PR_TITLE" \
+            -f squash_merge_commit_message="PR_BODY" \
+            -f web_commit_signoff_required=false
+
+          echo "✅ Repository settings applied successfully!"
+
+      - name: Summary
+        run: |
+          echo "## Repository Setup Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Target Repository:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Repository: ${{ steps.repo-name.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lesson Name: ${{ inputs.lesson_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Year: ${{ steps.repo-name.outputs.year }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Pull Request Template" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Devcontainer Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Git Hooks (pre-commit, commit-msg)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ CI Workflow (build.yml)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ WPILib Project Structure (Gradle, VS Code, build files)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎯 Protected Branch: ${{ inputs.target_branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
+          echo "  - Go to [${{ steps.repo-name.outputs.repository_name }}](https://github.com/${{ steps.repo-name.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
+          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer/devcontainer.json" >> $GITHUB_STEP_SUMMARY
