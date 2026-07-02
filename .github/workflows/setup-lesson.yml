@@ -113,7 +113,7 @@ jobs:
           git add .devcontainer
 
           if git diff --staged --quiet; then
-            echo "✅ Devcontainer configuration already exists and is up to date!"
+            echo "✅ D(Write your answer here)_evcontainer configuration already exists and is up to date!"
           else
             git commit -m "chore: add devcontainer configuration"
             git push
@@ -180,7 +180,7 @@ jobs:
           cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
 
           # Update team number and project year in wpilib_preferences.json
-          sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
+          #sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
           sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ steps.repo-name.outputs.year }}"/' .wpilib/wpilib_preferences.json
 
           # Copy Gradle wrapper and build files
