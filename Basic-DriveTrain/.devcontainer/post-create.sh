@@ -16,7 +16,10 @@ sudo apt-get update && sudo apt-get install -y \
   libx11-dev \
   xauth \
   x11-apps \
-  wget
+  wget \
+  gh
+
+gh extension install github/gh-classroom
 
 
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
@@ -54,6 +57,11 @@ if os.path.exists(path):
     with open(path) as f:
         settings = json.load(f)
 settings["java.jdt.ls.java.home"] = sys.argv[1]
+# Map JavaSE-17 to the installed JDK so the Language Server doesn't reject
+# the project's sourceCompatibility = JavaVersion.VERSION_17 setting.
+settings["java.configuration.runtimes"] = [
+    {"name": "JavaSE-17", "path": sys.argv[1], "default": True}
+]
 with open(path, "w") as f:
     json.dump(settings, f, indent=2)
     f.write("\n")

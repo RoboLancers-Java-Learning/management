@@ -107,10 +107,10 @@ jobs:
           mkdir -p .devcontainer
 
           # Copy devcontainer from templates directory
-          cp ../management/${{inputs.lesson_name}}/.devcontainer/devcontainer.json .devcontainer/devcontainer.json
+          cp -r ../management/${{inputs.lesson_name}}/.devcontainer .
 
           # Add devcontainer.json to git
-          git add .devcontainer/devcontainer.json
+          git add .devcontainer
 
           if git diff --staged --quiet; then
             echo "✅ Devcontainer configuration already exists and is up to date!"
@@ -180,7 +180,7 @@ jobs:
           cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
 
           # Update team number and project year in wpilib_preferences.json
-          sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
+          #sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
           sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ steps.repo-name.outputs.year }}"/' .wpilib/wpilib_preferences.json
 
           # Copy Gradle wrapper and build files
@@ -199,6 +199,8 @@ jobs:
 
           # Copy WPILib license
           cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
+          # Copy Lesson files
+          cp ../management/${{inputs.lesson_name}}/*.md .
 
           # Copy source code structure
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
@@ -269,4 +271,4 @@ jobs:
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
           echo "  - Go to [${{ steps.repo-name.outputs.repository_name }}](https://github.com/${{ steps.repo-name.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
-          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer/devcontainer.json" >> $GITHUB_STEP_SUMMARY
+          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer" >> $GITHUB_STEP_SUMMARY
