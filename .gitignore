@@ -1,1 +1,3 @@
 templates/.claude/settings.local.json
+*/bin/
+*/.gradle/

@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - "Basic-DriveTrain-Talon"
+          - "Basic-DriveTrain"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
@@ -68,21 +68,20 @@ jobs:
             # Initialize the repository with an initial commit
             TEMP_DIR=$(mktemp -d)
             cd $TEMP_DIR
-            git init
+            git init -b main
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             echo "# ${{ steps.repo-name.outputs.repository_short_name }}" > README.md
             echo "" >> README.md
-            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name_name }} " >> README.md
+            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name }} " >> README.md
             git add README.md
             git commit -m "chore: initial commit"
-            git branch -M ${{ inputs.target_branch }}
             git remote add origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git"
-            git push -u origin ${{ inputs.target_branch }}
+            git push -u origin main
             cd -
             rm -rf $TEMP_DIR
             
-            echo "✅ Repository initialized with ${{ inputs.target_branch }} branch!"
+            echo "✅ Repository initialized with main branch!"
           fi
 
       - name: Checkout management repository
@@ -151,13 +150,13 @@ jobs:
           echo "Setting up CI workflow for ${{ steps.repo-name.outputs.repository_name }}..."
 
           # Create .github/workflows directory if it doesn't exist
-          mkdir -p .github/workflows
+          # mkdir -p .github/workflows
 
-          # Copy build.yml from templates
-          cp ../management/${{inputs.lesson_name}}/.github/workflows/build.yml .github/workflows/build.yml
+          # Copy .github folder from templates
+          cp -r ../management/${{inputs.lesson_name}}/.github/ .github
 
           # Commit and push if there are changes
-          git add .github/workflows/build.yml
+          git add .github
 
           if git diff --staged --quiet; then
             echo "✅ CI workflow already exists and is up to date!"
@@ -205,7 +204,6 @@ jobs:
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
           mkdir -p src/main/deploy
           cp -r ../management/${{inputs.lesson_name}}/src/main/java/frc/robot/* src/main/java/frc/robot/
-          cp ../management/${{inputs.lesson_name}}/src/main/deploy/example.txt src/main/deploy/
 
           # Copy vendordeps directory
           mkdir -p vendordeps
@@ -267,7 +265,6 @@ jobs:
           echo "- ✅ Git Hooks (pre-commit, commit-msg)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ CI Workflow (build.yml)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ WPILib Project Structure (Gradle, VS Code, build files)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎯 Protected Branch: ${{ inputs.target_branch }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
