@@ -1,19 +1,13 @@
 #!/bin/bash
 set -e
 
-# Configure git hooks
-git config core.hooksPath .githooks
-
-# Install UV (Python package manager) - allow this to fail gracefully
-curl -LsSf https://astral.sh/uv/install.sh | sh || true
-
 # Install system dependencies for WPILib simulation
-apt-get update && apt-get install -y \
+sudo apt-get update && sudo apt-get install -y \
   build-essential \
   cmake \
   pkg-config \
-  libgl1-mesa-glx \
-  libgl1-mesa-dev \
+  libgl1 \
+  libgl-dev \
   libxrender1 \
   libxrandr2 \
   libxinerama1 \
@@ -24,21 +18,7 @@ apt-get update && apt-get install -y \
   x11-apps \
   wget
 
-cd /tmp
-# Install WPILib VS Code extension manually from GitHub release.
-# We do this in post-create (not in devcontainer.json extensions list) because:
-# 1. The marketplace version may lag behind the latest 2026 release
-# 2. We need the exact 2026.2.1 version to match GradleRIO 2026.2.1
-# 3. Manual extraction ensures deterministic, reproducible extension version
-wget 'https://github.com/wpilibsuite/vscode-wpilib/releases/download/v2026.2.1/vscode-wpilib-2026.2.1.vsix'
-# "code" CLI is not available inside the container, so unpack the VSIX manually.
-# VS Code Server loads extensions from ~/.vscode-server/extensions/.
-EXT_DIR="$HOME/.vscode-server/extensions/wpilibsuite.vscode-wpilib-2026.2.1"
-mkdir -p "$EXT_DIR"
-unzip -o /tmp/vscode-wpilib-2026.2.1.vsix 'extension/*' -d /tmp/vscode-wpilib-unpack
-cp -r /tmp/vscode-wpilib-unpack/extension/. "$EXT_DIR/"
-rm -rf /tmp/vscode-wpilib-unpack /tmp/vscode-wpilib-2026.2.1.vsix
-cd -
+
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
 # The extension checks ~/wpilib/2026/jdk/ to configure java.jdt.ls.java.home.
 # We symlink to the system JDK installed by the devcontainer Java feature.
@@ -183,9 +163,12 @@ cat > "$TOOLS_DIR/tools.json" << EOF
 ]
 EOF
 
-# Pre-populate the Gradle cache with WPILib and vendor JARs.
+# Pre-populate the Gradle cache with WPILib and vendor JARs if a project wrapper exists.
 # Without this, the Java Language Server has no classpath and IntelliSense shows nothing.
-chmod +x gradlew
-./gradlew dependencies --no-daemon -q
+# Skipped in repos (like this management repo) that have no root-level Gradle project.
+if [ -f gradlew ]; then
+  chmod +x gradlew
+  ./gradlew dependencies --no-daemon -q
+fi
 
 echo "WPILib devcontainer setup complete"
