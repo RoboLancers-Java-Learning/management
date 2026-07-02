@@ -150,13 +150,13 @@ jobs:
           echo "Setting up CI workflow for ${{ steps.repo-name.outputs.repository_name }}..."
 
           # Create .github/workflows directory if it doesn't exist
-          mkdir -p .github/workflows
+          # mkdir -p .github/workflows
 
-          # Copy build.yml from templates
-          cp ../management/${{inputs.lesson_name}}/.github/workflows/build.yml .github/workflows/build.yml
+          # Copy .github folder from templates
+          cp -r ../management/${{inputs.lesson_name}}/.github/ .github
 
           # Commit and push if there are changes
-          git add .github/workflows/build.yml
+          git add .github
 
           if git diff --staged --quiet; then
             echo "✅ CI workflow already exists and is up to date!"
