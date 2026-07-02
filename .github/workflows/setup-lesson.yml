@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - "Basic-DriveTrain-2026"
+          - "Basic-DriveTrain"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
