@@ -3,26 +3,16 @@ name: Setup Repository
 on:
   workflow_dispatch:
     inputs:
-      team_number:
-        description: "Team number"
+      lesson_name:
+        description: "lesson name"
         required: true
         type: choice
         options:
-          - "321"
-          - "427"
-      competition_name:
-        description: "Competition name (e.g., Reefscape) or 'Offseason'"
-        required: true
-        type: string
+          - "Basic-DriveTrain-Talon"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
         type: string
-      target_branch:
-        description: "Branch to protect (default: main)"
-        required: false
-        type: string
-        default: "main"
 
 jobs:
   setup:
@@ -50,7 +40,7 @@ jobs:
             echo "No year provided, using current year: $YEAR"
           fi
 
-          REPO_SHORT_NAME="${{ inputs.team_number }}-${{ inputs.competition_name }}-$YEAR"
+          REPO_SHORT_NAME="${{ inputs.lesson_name }}-$YEAR"
           REPO_FULL_NAME="${{ github.repository_owner }}/$REPO_SHORT_NAME"
           echo "year=$YEAR" >> $GITHUB_OUTPUT
           echo "repository_short_name=$REPO_SHORT_NAME" >> $GITHUB_OUTPUT
@@ -83,7 +73,7 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             echo "# ${{ steps.repo-name.outputs.repository_short_name }}" > README.md
             echo "" >> README.md
-            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.competition_name }} - Team ${{ inputs.team_number }}" >> README.md
+            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name_name }} " >> README.md
             git add README.md
             git commit -m "chore: initial commit"
             git branch -M ${{ inputs.target_branch }}
@@ -109,28 +99,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Setup Pull Request Template
-        run: |
-          cd target-repo
-          echo "Setting up pull request template for ${{ steps.repo-name.outputs.repository_name }}..."
-
-          # Create .github directory if it doesn't exist
-          mkdir -p .github
-
-          # Copy PR template from templates directory
-          cp ../management/templates/.github/PULL_REQUEST_TEMPLATE.md .github/PULL_REQUEST_TEMPLATE.md
-
-          # Commit and push if there are changes
-          git add .github/PULL_REQUEST_TEMPLATE.md
-
-          if git diff --staged --quiet; then
-            echo "✅ PR template already exists and is up to date!"
-          else
-            git commit -m "chore: add pull request template"
-            git push
-            echo "✅ PR template created and committed!"
-          fi
-
       - name: Setup Devcontainer Configuration
         run: |
           cd target-repo
@@ -140,7 +108,7 @@ jobs:
           mkdir -p .devcontainer
 
           # Copy devcontainer from templates directory
-          cp ../management/templates/.devcontainer/devcontainer.json .devcontainer/devcontainer.json
+          cp ../management/${{inputs.lesson_name}}/.devcontainer/devcontainer.json .devcontainer/devcontainer.json
 
           # Add devcontainer.json to git
           git add .devcontainer/devcontainer.json
@@ -152,14 +120,13 @@ jobs:
             git push
             echo "✅ Devcontainer configuration created and committed!"
           fi
-
       - name: Setup Git Hooks
         run: |
           cd target-repo
           echo "Setting up git hooks for ${{ steps.repo-name.outputs.repository_name }}..."
 
           # Copy git hooks from templates directory
-          cp -r ../management/templates/.githooks .githooks
+          cp -r ../management/${{inputs.lesson_name}}/.githooks .githooks
 
           # Make hooks executable
           chmod +x .githooks/pre-commit .githooks/commit-msg
@@ -187,7 +154,7 @@ jobs:
           mkdir -p .github/workflows
 
           # Copy build.yml from templates
-          cp ../management/templates/.github/workflows/build.yml .github/workflows/build.yml
+          cp ../management/${{inputs.lesson_name}}/.github/workflows/build.yml .github/workflows/build.yml
 
           # Commit and push if there are changes
           git add .github/workflows/build.yml
@@ -207,11 +174,11 @@ jobs:
 
           # Copy .vscode settings
           mkdir -p .vscode
-          cp -r ../management/templates/.vscode/* .vscode/
+          cp -r ../management/${{inputs.lesson_name}}/.vscode/* .vscode/
 
           # Copy .wpilib preferences and update with team number and year
           mkdir -p .wpilib
-          cp ../management/templates/.wpilib/wpilib_preferences.json .wpilib/
+          cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
 
           # Update team number and project year in wpilib_preferences.json
           sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
@@ -219,30 +186,30 @@ jobs:
 
           # Copy Gradle wrapper and build files
           mkdir -p gradle/wrapper
-          cp ../management/templates/gradle/wrapper/* gradle/wrapper/
-          cp ../management/templates/gradlew .
-          cp ../management/templates/gradlew.bat .
+          cp ../management/${{inputs.lesson_name}}/gradle/wrapper/* gradle/wrapper/
+          cp ../management/${{inputs.lesson_name}}/gradlew .
+          cp ../management/${{inputs.lesson_name}}/gradlew.bat .
           chmod +x gradlew
 
           # Copy build configuration files
-          cp ../management/templates/build.gradle .
-          cp ../management/templates/settings.gradle .
+          cp ../management/${{inputs.lesson_name}}/build.gradle .
+          cp ../management/${{inputs.lesson_name}}/settings.gradle .
 
           # Copy .gitignore
-          cp ../management/templates/.gitignore .
+          cp ../management/${{inputs.lesson_name}}/.gitignore .
 
           # Copy WPILib license
-          cp ../management/templates/WPILib-License.md .
+          cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
 
           # Copy source code structure
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
           mkdir -p src/main/deploy
-          cp -r ../management/templates/src/main/java/frc/robot/* src/main/java/frc/robot/
-          cp ../management/templates/src/main/deploy/example.txt src/main/deploy/
+          cp -r ../management/${{inputs.lesson_name}}/src/main/java/frc/robot/* src/main/java/frc/robot/
+          cp ../management/${{inputs.lesson_name}}/src/main/deploy/example.txt src/main/deploy/
 
           # Copy vendordeps directory
           mkdir -p vendordeps
-          cp ../management/templates/vendordeps/* vendordeps/
+          cp ../management/${{inputs.lesson_name}}/vendordeps/* vendordeps/
 
           # Commit and push if there are changes
           git add .vscode/ .wpilib/ gradle/ gradlew gradlew.bat build.gradle settings.gradle .gitignore WPILib-License.md src/ vendordeps/
@@ -265,10 +232,10 @@ jobs:
           gh api \
             --method PATCH \
             -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
             "/repos/${{ steps.repo-name.outputs.repository_name }}" \
             -f has_issues=true \
-            -f has_projects=true \
+            -f has_projects=false \
             -f has_wiki=false \
             -f has_discussions=false \
             -f allow_squash_merge=true \
@@ -279,50 +246,10 @@ jobs:
             -f allow_update_branch=true \
             -f squash_merge_commit_title="PR_TITLE" \
             -f squash_merge_commit_message="PR_BODY" \
-            -f web_commit_signoff_required=false
+            -f web_commit_signoff_required=false \
+            -f is_template=true
 
           echo "✅ Repository settings applied successfully!"
-
-      - name: Apply Branch Protection Rules
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-        if: ${{ inputs.target_branch != '' }}
-        run: |
-          echo "Applying branch protection rules to ${{ inputs.target_branch }} on ${{ steps.repo-name.outputs.repository_name }}..."
-
-          # Create branch protection rule with required CI checks
-          gh api \
-            --method PUT \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/${{ steps.repo-name.outputs.repository_name }}/branches/${{ inputs.target_branch }}/protection" \
-            --input - <<EOF
-          {
-            "required_status_checks": {
-              "strict": true,
-              "contexts": ["spotless", "build"]
-            },
-            "enforce_admins": true,
-            "required_pull_request_reviews": {
-              "dismissal_restrictions": {},
-              "dismiss_stale_reviews": true,
-              "require_code_owner_reviews": true,
-              "required_approving_review_count": 1,
-              "require_last_push_approval": false,
-              "bypass_pull_request_allowances": {}
-            },
-            "restrictions": null,
-            "required_linear_history": true,
-            "allow_force_pushes": false,
-            "allow_deletions": false,
-            "block_creations": false,
-            "required_conversation_resolution": true,
-            "lock_branch": false,
-            "allow_fork_syncing": false
-          }
-          EOF
-
-          echo "✅ Branch protection rules applied successfully!"
 
       - name: Summary
         run: |
@@ -330,12 +257,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Target Repository:" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 Repository: ${{ steps.repo-name.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- 🏆 Team Number: ${{ inputs.team_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎯 Competition: ${{ inputs.competition_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lesson Name: ${{ inputs.lesson_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- 📅 Year: ${{ steps.repo-name.outputs.year }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Branch Protection Rules (requires CI)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Pull Request Template" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Devcontainer Configuration" >> $GITHUB_STEP_SUMMARY
