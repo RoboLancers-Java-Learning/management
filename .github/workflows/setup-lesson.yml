@@ -107,7 +107,7 @@ jobs:
           mkdir -p .devcontainer
 
           # Copy devcontainer from templates directory
-          cp ../management/${{inputs.lesson_name}}/.devcontainer/devcontainer.json .devcontainer/devcontainer.json
+          cp -r ../management/${{inputs.lesson_name}}/.devcontainer .devcontainer
 
           # Add devcontainer.json to git
           git add .devcontainer/devcontainer.json
