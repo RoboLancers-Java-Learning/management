@@ -76,6 +76,7 @@ jobs:
             echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name }} " >> README.md
             git add README.md
             git commit -m "chore: initial commit"
+            git branch -M main
             git remote add origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git"
             git push -u origin main
             cd -
