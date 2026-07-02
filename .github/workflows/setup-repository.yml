@@ -270,7 +270,7 @@ jobs:
             -f has_issues=true \
             -f has_projects=true \
             -f has_wiki=false \
-            -f has_discussions=true \
+            -f has_discussions=false \
             -f allow_squash_merge=true \
             -f allow_merge_commit=false \
             -f allow_rebase_merge=true \
@@ -286,6 +286,7 @@ jobs:
       - name: Apply Branch Protection Rules
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        if: ${{ inputs.target_branch != '' }}
         run: |
           echo "Applying branch protection rules to ${{ inputs.target_branch }} on ${{ steps.repo-name.outputs.repository_name }}..."
 
