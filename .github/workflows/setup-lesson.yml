@@ -199,6 +199,8 @@ jobs:
 
           # Copy WPILib license
           cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
+          # Copy Lesson files
+          cp ../management/${{inputs.lesson_name}}/*.md .
 
           # Copy source code structure
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
