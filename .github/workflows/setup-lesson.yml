@@ -73,16 +73,15 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             echo "# ${{ steps.repo-name.outputs.repository_short_name }}" > README.md
             echo "" >> README.md
-            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name_name }} " >> README.md
+            echo "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name }} " >> README.md
             git add README.md
             git commit -m "chore: initial commit"
-            git branch -M ${{ inputs.target_branch }}
             git remote add origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git"
-            git push -u origin ${{ inputs.target_branch }}
+            git push -u origin main
             cd -
             rm -rf $TEMP_DIR
             
-            echo "✅ Repository initialized with ${{ inputs.target_branch }} branch!"
+            echo "✅ Repository initialized with main branch!"
           fi
 
       - name: Checkout management repository
@@ -267,7 +266,6 @@ jobs:
           echo "- ✅ Git Hooks (pre-commit, commit-msg)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ CI Workflow (build.yml)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ WPILib Project Structure (Gradle, VS Code, build files)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎯 Protected Branch: ${{ inputs.target_branch }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
