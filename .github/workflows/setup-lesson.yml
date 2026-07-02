@@ -110,7 +110,7 @@ jobs:
           cp -r ../management/${{inputs.lesson_name}}/.devcontainer .devcontainer
 
           # Add devcontainer.json to git
-          git add .devcontainer/devcontainer.json
+          git add .devcontainer
 
           if git diff --staged --quiet; then
             echo "✅ Devcontainer configuration already exists and is up to date!"
