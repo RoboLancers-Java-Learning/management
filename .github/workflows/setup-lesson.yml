@@ -246,7 +246,8 @@ jobs:
             -f allow_update_branch=true \
             -f squash_merge_commit_title="PR_TITLE" \
             -f squash_merge_commit_message="PR_BODY" \
-            -f web_commit_signoff_required=false
+            -f web_commit_signoff_required=false \
+            -f is_template=true
 
           echo "✅ Repository settings applied successfully!"
 
