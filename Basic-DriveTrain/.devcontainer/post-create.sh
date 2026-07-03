@@ -19,7 +19,7 @@ sudo apt-get update && sudo apt-get install -y \
   wget \
   gh
 
-gh extension install github/gh-classroom
+gh extension install foundation50/gh-student
 
 
 # Create the WPILib home directory structure the vscode-wpilib extension expects.
