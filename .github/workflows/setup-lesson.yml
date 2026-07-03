@@ -9,17 +9,22 @@ on:
         type: choice
         options:
           - "Basic-DriveTrain"
+          - "GitHub Basics"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
         type: string
 
 jobs:
-  setup:
+  provision:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      year: ${{ steps.repo-name.outputs.year }}
+      repository_short_name: ${{ steps.repo-name.outputs.repository_short_name }}
+      repository_name: ${{ steps.repo-name.outputs.repository_name }}
 
     steps:
       - name: Generate GitHub App Token
@@ -60,11 +65,11 @@ jobs:
             # Create the repository with README to initialize main branch
             gh repo create ${{ steps.repo-name.outputs.repository_name }} \
               --public \
-              --description "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.competition_name }} (Team ${{ inputs.team_number }})" \
+              --description "FRC ${{ steps.repo-name.outputs.year }} - ${{ inputs.lesson_name }}" \
               --clone=false
-            
+
             echo "✅ Repository created successfully!"
-            
+
             # Initialize the repository with an initial commit
             TEMP_DIR=$(mktemp -d)
             cd $TEMP_DIR
@@ -80,9 +85,55 @@ jobs:
             git push -u origin main
             cd -
             rm -rf $TEMP_DIR
-            
+
             echo "✅ Repository initialized with main branch!"
           fi
+
+      - name: Apply Repository Settings
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          echo "Applying repository settings to ${{ steps.repo-name.outputs.repository_name }}..."
+
+          # Update repository settings
+          gh api \
+            --method PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "/repos/${{ steps.repo-name.outputs.repository_name }}" \
+            -f has_issues=true \
+            -f has_projects=false \
+            -f has_wiki=false \
+            -f has_discussions=false \
+            -f allow_squash_merge=true \
+            -f allow_merge_commit=false \
+            -f allow_rebase_merge=true \
+            -f allow_auto_merge=true \
+            -f delete_branch_on_merge=true \
+            -f allow_update_branch=true \
+            -f squash_merge_commit_title="PR_TITLE" \
+            -f squash_merge_commit_message="PR_BODY" \
+            -f web_commit_signoff_required=false \
+            -f is_template=true
+
+          echo "✅ Repository settings applied successfully!"
+
+  setup-basic-drivetrain:
+    needs: provision
+    if: inputs.lesson_name == 'Basic-DriveTrain'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
 
       - name: Checkout management repository
         uses: actions/checkout@v4
@@ -93,7 +144,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          git clone "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ steps.repo-name.outputs.repository_name }}.git" target-repo
+          git clone "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ needs.provision.outputs.repository_name }}.git" target-repo
           cd target-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -101,7 +152,7 @@ jobs:
       - name: Setup Devcontainer Configuration
         run: |
           cd target-repo
-          echo "Setting up devcontainer configuration for ${{ steps.repo-name.outputs.repository_name }}..."
+          echo "Setting up devcontainer configuration for ${{ needs.provision.outputs.repository_name }}..."
 
           # Create .devcontainer directory if it doesn't exist
           mkdir -p .devcontainer
@@ -119,10 +170,11 @@ jobs:
             git push
             echo "✅ Devcontainer configuration created and committed!"
           fi
+
       - name: Setup Git Hooks
         run: |
           cd target-repo
-          echo "Setting up git hooks for ${{ steps.repo-name.outputs.repository_name }}..."
+          echo "Setting up git hooks for ${{ needs.provision.outputs.repository_name }}..."
 
           # Copy git hooks from templates directory
           cp -r ../management/${{inputs.lesson_name}}/.githooks .githooks
@@ -147,10 +199,7 @@ jobs:
       - name: Setup CI Workflow
         run: |
           cd target-repo
-          echo "Setting up CI workflow for ${{ steps.repo-name.outputs.repository_name }}..."
-
-          # Create .github/workflows directory if it doesn't exist
-          # mkdir -p .github/workflows
+          echo "Setting up CI workflow for ${{ needs.provision.outputs.repository_name }}..."
 
           # Copy .github folder from templates
           cp -r ../management/${{inputs.lesson_name}}/.github/ .github
@@ -169,7 +218,7 @@ jobs:
       - name: Setup WPILib Project Files
         run: |
           cd target-repo
-          echo "Setting up WPILib project files for ${{ steps.repo-name.outputs.repository_name }}..."
+          echo "Setting up WPILib project files for ${{ needs.provision.outputs.repository_name }}..."
 
           # Copy .vscode settings
           mkdir -p .vscode
@@ -179,9 +228,8 @@ jobs:
           mkdir -p .wpilib
           cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
 
-          # Update team number and project year in wpilib_preferences.json
-          #sed -i 's/"teamNumber": [0-9]*/"teamNumber": ${{ inputs.team_number }}/' .wpilib/wpilib_preferences.json
-          sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ steps.repo-name.outputs.year }}"/' .wpilib/wpilib_preferences.json
+          # Update project year in wpilib_preferences.json
+          sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ needs.provision.outputs.year }}"/' .wpilib/wpilib_preferences.json
 
           # Copy Gradle wrapper and build files
           mkdir -p gradle/wrapper
@@ -223,43 +271,14 @@ jobs:
             echo "✅ WPILib project files created and committed!"
           fi
 
-      - name: Apply Repository Settings
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-        run: |
-          echo "Applying repository settings to ${{ steps.repo-name.outputs.repository_name }}..."
-
-          # Update repository settings
-          gh api \
-            --method PATCH \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2026-03-10" \
-            "/repos/${{ steps.repo-name.outputs.repository_name }}" \
-            -f has_issues=true \
-            -f has_projects=false \
-            -f has_wiki=false \
-            -f has_discussions=false \
-            -f allow_squash_merge=true \
-            -f allow_merge_commit=false \
-            -f allow_rebase_merge=true \
-            -f allow_auto_merge=true \
-            -f delete_branch_on_merge=true \
-            -f allow_update_branch=true \
-            -f squash_merge_commit_title="PR_TITLE" \
-            -f squash_merge_commit_message="PR_BODY" \
-            -f web_commit_signoff_required=false \
-            -f is_template=true
-
-          echo "✅ Repository settings applied successfully!"
-
       - name: Summary
         run: |
           echo "## Repository Setup Complete! 🎉" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Target Repository:" >> $GITHUB_STEP_SUMMARY
-          echo "- 📦 Repository: ${{ steps.repo-name.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Repository: ${{ needs.provision.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Lesson Name: ${{ inputs.lesson_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- 📅 Year: ${{ steps.repo-name.outputs.year }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Year: ${{ needs.provision.outputs.year }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
@@ -271,5 +290,48 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
-          echo "  - Go to [${{ steps.repo-name.outputs.repository_name }}](https://github.com/${{ steps.repo-name.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
+          echo "  - Go to [${{ needs.provision.outputs.repository_name }}](https://github.com/${{ needs.provision.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
           echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer" >> $GITHUB_STEP_SUMMARY
+
+  setup-github-basics:
+    needs: provision
+    if: inputs.lesson_name == 'GitHub Basics'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout management repository
+        uses: actions/checkout@v4
+        with:
+          path: management
+
+      - name: Clone target repository
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          git clone "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ needs.provision.outputs.repository_name }}.git" target-repo
+          cd target-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Summary
+        run: |
+          echo "## Repository Setup Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Target Repository:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Repository: ${{ needs.provision.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lesson Name: ${{ inputs.lesson_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Year: ${{ needs.provision.outputs.year }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
