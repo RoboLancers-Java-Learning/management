@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Unit 1: Field Declarations",
+    "type": "run",
+    "setup": "chmod +x ./gradlew && ./gradlew compileTestJava --no-daemon",
+    "run": "./gradlew test --tests 'frc.robot.Unit1FieldDeclarationTest' --no-daemon",
+    "timeout": 600,
+    "points": 20
+  },
+  {
+    "name": "Unit 2: Constants and Initialization",
+    "type": "run",
+    "run": "./gradlew test --tests 'frc.robot.Unit2ConstantsAndInitTest' --no-daemon",
+    "timeout": 300,
+    "points": 25
+  },
+  {
+    "name": "Unit 3: Followers and driveArcade()",
+    "type": "run",
+    "run": "./gradlew test --tests 'frc.robot.Unit3FollowerAndDriveTest' --no-daemon",
+    "timeout": 300,
+    "points": 30
+  },
+  {
+    "name": "Unit 4: RobotContainer Wiring",
+    "type": "run",
+    "run": "./gradlew test --tests 'frc.robot.Unit4RobotContainerTest' --no-daemon",
+    "timeout": 300,
+    "points": 25
+  }
+]
