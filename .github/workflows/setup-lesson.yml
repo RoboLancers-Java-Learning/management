@@ -201,12 +201,6 @@ jobs:
           cd target-repo
           echo "Setting up CI workflow for ${{ needs.provision.outputs.repository_name }}..."
 
-          # Copy .github folder from templates
-          cp -r ../management/${{inputs.lesson_name}}/.github/ .github
-
-          # Commit and push if there are changes
-          git add .github
-
           if git diff --staged --quiet; then
             echo "✅ CI workflow already exists and is up to date!"
           else
