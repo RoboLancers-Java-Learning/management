@@ -104,15 +104,11 @@ GitHub renders Markdown in README files, Issues, and PR descriptions. Use it to 
 
 Complete each task in order. Check off each item as you finish it.
 
-### Task 1 — Clone this repository
+### Task 1 — Create a codespace for this repository.
 
-Clone this repository to your local machine using the command line (not GitHub Desktop):
+open the accepted assignment link and click on "go to Repository". Then click on the green "Code" button and select "Open with Codespaces" and then "New codespace on main".
 
-```bash
-git clone <paste the HTTPS URL from the green Code button>
-```
-
-- [ ] Repository cloned locally
+- [ ] Codepace created and ready to use.
 
 ---
 
