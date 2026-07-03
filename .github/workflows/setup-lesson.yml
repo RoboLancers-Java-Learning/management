@@ -203,9 +203,10 @@ jobs:
           cp ../management/${{inputs.lesson_name}}/*.md .
 
           # Copy source code structure
+          mkdir -p src
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
           mkdir -p src/main/deploy
-          cp -r ../management/${{inputs.lesson_name}}/src/main/java/frc/robot/* src/main/java/frc/robot/
+          cp -r ../management/${{inputs.lesson_name}}/src/* src/
 
           # Copy vendordeps directory
           mkdir -p vendordeps
