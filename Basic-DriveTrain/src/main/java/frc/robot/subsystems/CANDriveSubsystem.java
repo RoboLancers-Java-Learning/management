@@ -9,7 +9,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 // TODO Unit 1: Add import for TalonFX using VSCode quick-fix (Ctrl+.)
 // TODO Unit 2: Add imports for TalonFXConfiguration and DifferentialDrive
 // TODO Unit 2: Add static import for DriveConstants: import static frc.robot.Constants.DriveConstants.*;
-// TODO Unit 3: Add imports for Follower, InvertedValue, Command, and DoubleSupplier
+// TODO Unit 3: Add imports for Follower and InvertedValue
+import edu.wpi.first.wpilibj2.command.Command;
+import java.util.function.DoubleSupplier;
 
 public class CANDriveSubsystem extends SubsystemBase {
 
@@ -26,9 +28,12 @@ public class CANDriveSubsystem extends SubsystemBase {
     throw new UnsupportedOperationException("CANDriveSubsystem not yet implemented — complete Units 2 and 3");
   }
 
-  // TODO Unit 3: Add the driveArcade command factory method below.
- 
-  // Reference: See Unit 3 assignment and docs/programming/driving_robot.md (TalonFX tab)
+  // TODO Unit 3: Replace this stub with your implementation.
+  // The method must return a Command that calls arcadeDrive using the two suppliers.
+  // Reference: See unit3-arcade-drive-factory.md
+  public Command driveArcade(DoubleSupplier speed, DoubleSupplier rotation) {
+    throw new UnsupportedOperationException("driveArcade not yet implemented — complete Unit 3");
+  }
 
   @Override
   public void periodic() {

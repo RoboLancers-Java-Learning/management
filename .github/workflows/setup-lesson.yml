@@ -9,7 +9,7 @@ on:
         type: choice
         options:
           - "Basic-DriveTrain"
-          - "GitHub Basics"
+          - "GitHub-Basics"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
@@ -295,7 +295,7 @@ jobs:
 
   setup-github-basics:
     needs: provision
-    if: inputs.lesson_name == 'GitHub Basics'
+    if: inputs.lesson_name == 'GitHub-Basics'
     runs-on: ubuntu-latest
     permissions:
       contents: write
