@@ -324,6 +324,66 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Setup Devcontainer Configuration
+        run: |
+          cd target-repo
+          echo "Setting up devcontainer configuration for ${{ needs.provision.outputs.repository_name }}..."
+
+          mkdir -p .devcontainer
+          cp -r ../management/${{ inputs.lesson_name }}/.devcontainer .
+
+          git add .devcontainer
+
+          if git diff --staged --quiet; then
+            echo "✅ Devcontainer configuration already exists and is up to date!"
+          else
+            git commit -m "chore: add devcontainer configuration"
+            git push
+            echo "✅ Devcontainer configuration created and committed!"
+          fi
+
+      - name: Setup Git Hooks
+        run: |
+          cd target-repo
+          echo "Setting up git hooks for ${{ needs.provision.outputs.repository_name }}..."
+
+          cp -r ../management/${{ inputs.lesson_name }}/.githooks .githooks
+          chmod +x .githooks/commit-msg
+
+          git add .githooks/
+
+          if git diff --staged --quiet; then
+            echo "✅ Git hooks already exist and are up to date!"
+          else
+            git commit -m "chore: add git hooks"
+            git push
+            echo "✅ Git hooks created and committed!"
+          fi
+
+      - name: Setup Lesson Files
+        run: |
+          cd target-repo
+          echo "Setting up lesson files for ${{ needs.provision.outputs.repository_name }}..."
+
+          cp ../management/${{ inputs.lesson_name }}/.gitignore .
+          cp ../management/${{ inputs.lesson_name }}/wpilib.gitignore .
+          cp ../management/${{ inputs.lesson_name }}/README.md .
+          cp ../management/${{ inputs.lesson_name }}/student-notes.md .
+
+          mkdir -p grading
+          cp ../management/${{ inputs.lesson_name }}/grading/* grading/
+          chmod +x grading/*.sh
+
+          git add .gitignore wpilib.gitignore README.md student-notes.md grading/
+
+          if git diff --staged --quiet; then
+            echo "✅ Lesson files already exist and are up to date!"
+          else
+            git commit -m "chore: add lesson files"
+            git push
+            echo "✅ Lesson files created and committed!"
+          fi
+
       - name: Summary
         run: |
           echo "## Repository Setup Complete! 🎉" >> $GITHUB_STEP_SUMMARY
@@ -335,3 +395,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Devcontainer Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Git Hooks (commit-msg)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Lesson Files (README, student-notes, grading scripts)" >> $GITHUB_STEP_SUMMARY
