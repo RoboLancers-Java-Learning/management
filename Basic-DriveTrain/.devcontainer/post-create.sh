@@ -50,12 +50,16 @@ rm -rf ~/.vscode-server/data/User/workspaceStorage/*/redhat.java
 # settings values, so we resolve and write the path here after $WPILIB_JDK is known.
 mkdir -p .vscode
 python3 - "$WPILIB_JDK" << 'PYEOF'
-import json, sys, os
+import json, re, sys, os
 path = ".vscode/settings.json"
 settings = {}
 if os.path.exists(path):
     with open(path) as f:
-        settings = json.load(f)
+        text = f.read()
+    # settings.json is VS Code JSONC and may contain trailing commas that
+    # VS Code's own editor tolerates but Python's strict json module rejects.
+    text = re.sub(r',(\s*[}\]])', r'\1', text)
+    settings = json.loads(text)
 settings["java.jdt.ls.java.home"] = sys.argv[1]
 # Map JavaSE-17 to the installed JDK so the Language Server doesn't reject
 # the project's sourceCompatibility = JavaVersion.VERSION_17 setting.
