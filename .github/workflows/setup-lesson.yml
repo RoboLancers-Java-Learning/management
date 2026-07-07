@@ -242,10 +242,8 @@ jobs:
           # Copy WPILib license
           cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
           # Copy Lesson files
-          cp ../management/${{inputs.lesson_name}}/unit1-declare-fields.md .
-          cp ../management/${{inputs.lesson_name}}/unit2-constructor-constants.md .
-          cp ../management/${{inputs.lesson_name}}/unit4-robotcontainer-bindings.md .
-          cp ../management/${{inputs.lesson_name}}/unit3-arcade-drive-factory.md .
+          cp ../management/${{inputs.lesson_name}}/*.md .
+          
 
           # Copy source code structure
           mkdir -p src
@@ -260,7 +258,7 @@ jobs:
           cp ../management/${{inputs.lesson_name}}/vendordeps/* vendordeps/
 
           # Commit and push if there are changes
-          git add .vscode/ .wpilib/ gradle/ gradlew gradlew.bat build.gradle settings.gradle .gitignore WPILib-License.md src/ vendordeps/
+          git add .vscode/ .wpilib/ gradle/ gradlew gradlew.bat build.gradle settings.gradle .gitignore *.md src/ vendordeps/
 
           if git diff --staged --quiet; then
             echo "✅ WPILib project files already exist and are up to date!"
