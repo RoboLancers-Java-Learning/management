@@ -242,13 +242,18 @@ jobs:
           # Copy WPILib license
           cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
           # Copy Lesson files
-          cp ../management/${{inputs.lesson_name}}/*.md .
+          cp ../management/${{inputs.lesson_name}}/unit1-declare-fields.md .
+          cp ../management/${{inputs.lesson_name}}/unit2-constructor-constants.md .
+          cp ../management/${{inputs.lesson_name}}/unit4-robotcontainer-bindings.md .
+          cp ../management/${{inputs.lesson_name}}/unit3-arcade-drive-factory.md .
 
           # Copy source code structure
           mkdir -p src
           mkdir -p src/main/java/frc/robot/{commands,subsystems}
           mkdir -p src/main/deploy
           cp -r ../management/${{inputs.lesson_name}}/src/* src/
+          
+
 
           # Copy vendordeps directory
           mkdir -p vendordeps
