@@ -10,6 +10,7 @@ on:
         options:
           - "Basic-DriveTrain"
           - "GitHub-Basics"
+          - "Swerve-Drive"
       year:
         description: "Year (YYY format, e.g., 2025) or leave empty to use current year"
         required: false
@@ -284,6 +285,177 @@ jobs:
           echo "- ✅ Git Hooks (pre-commit, commit-msg)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ CI Workflow (build.yml)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ WPILib Project Structure (Gradle, VS Code, build files)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
+          echo "  - Go to [${{ needs.provision.outputs.repository_name }}](https://github.com/${{ needs.provision.outputs.repository_name }}/settings/codespaces) Settings → Codespaces" >> $GITHUB_STEP_SUMMARY
+          echo "  - Click 'Set up prebuild' → Select main branch and .devcontainer" >> $GITHUB_STEP_SUMMARY
+
+  setup-swerve-drive:
+    needs: provision
+    if: inputs.lesson_name == 'Swerve-Drive'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout management repository
+        uses: actions/checkout@v4
+        with:
+          path: management
+
+      - name: Clone target repository
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          git clone "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ needs.provision.outputs.repository_name }}.git" target-repo
+          cd target-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Devcontainer Configuration
+        run: |
+          cd target-repo
+          echo "Setting up devcontainer configuration for ${{ needs.provision.outputs.repository_name }}..."
+
+          # Create .devcontainer directory if it doesn't exist
+          mkdir -p .devcontainer
+
+          # Copy devcontainer from templates directory
+          cp -r ../management/${{inputs.lesson_name}}/.devcontainer .
+
+          # Add devcontainer.json to git
+          git add .devcontainer
+
+          if git diff --staged --quiet; then
+            echo "✅ Devcontainer configuration already exists and is up to date!"
+          else
+            git commit -m "chore: add devcontainer configuration"
+            git push
+            echo "✅ Devcontainer configuration created and committed!"
+          fi
+
+      - name: Setup Git Hooks
+        run: |
+          cd target-repo
+          echo "Setting up git hooks for ${{ needs.provision.outputs.repository_name }}..."
+
+          # Copy git hooks from templates directory
+          cp -r ../management/${{inputs.lesson_name}}/.githooks .githooks
+
+          # Make hooks executable
+          chmod +x .githooks/pre-push
+
+          # Commit and push if there are changes
+          git add .githooks/
+
+          if git diff --staged --quiet; then
+            echo "✅ Git hooks already exist and are up to date!"
+          else
+            git commit -m "chore: add git hooks"
+            git push
+            echo "✅ Git hooks created and committed!"
+          fi
+
+      - name: Setup CI Workflow
+        run: |
+          cd target-repo
+          echo "Setting up CI workflow for ${{ needs.provision.outputs.repository_name }}..."
+
+          if git diff --staged --quiet; then
+            echo "✅ CI workflow already exists and is up to date!"
+          else
+            git commit -m "ci: add build workflow"
+            git push
+            echo "✅ CI workflow created and committed!"
+          fi
+
+      - name: Setup WPILib Project Files
+        run: |
+          cd target-repo
+          echo "Setting up WPILib project files for ${{ needs.provision.outputs.repository_name }}..."
+
+          # Copy .vscode settings
+          mkdir -p .vscode
+          cp -r ../management/${{inputs.lesson_name}}/.vscode/* .vscode/
+
+          # Copy .wpilib preferences and update with team number and year
+          mkdir -p .wpilib
+          cp ../management/${{inputs.lesson_name}}/.wpilib/wpilib_preferences.json .wpilib/
+
+          # Update project year in wpilib_preferences.json
+          sed -i 's/"projectYear": "[^"]*"/"projectYear": "${{ needs.provision.outputs.year }}"/' .wpilib/wpilib_preferences.json
+
+          # Copy Gradle wrapper and build files
+          mkdir -p gradle/wrapper
+          cp ../management/${{inputs.lesson_name}}/gradle/wrapper/* gradle/wrapper/
+          cp ../management/${{inputs.lesson_name}}/gradlew .
+          cp ../management/${{inputs.lesson_name}}/gradlew.bat .
+          chmod +x gradlew
+
+          # Copy build configuration files
+          cp ../management/${{inputs.lesson_name}}/build.gradle .
+          cp ../management/${{inputs.lesson_name}}/settings.gradle .
+
+          # Copy .gitignore
+          cp ../management/${{inputs.lesson_name}}/.gitignore .
+
+          # Copy WPILib license
+          cp ../management/${{inputs.lesson_name}}/WPILib-License.md .
+          # Copy Lesson files
+          cp ../management/${{inputs.lesson_name}}/*.md .
+
+          # Copy grading scripts
+          mkdir -p grading
+          cp ../management/${{inputs.lesson_name}}/grading/* grading/
+          chmod +x grading/*.sh
+
+          # Copy source code structure, including the deploy/swerve JSON configuration
+          mkdir -p src
+          mkdir -p src/main/java/frc/robot/{commands,subsystems}
+          mkdir -p src/main/deploy
+          cp -r ../management/${{inputs.lesson_name}}/src/* src/
+
+          # Copy vendordeps directory
+          mkdir -p vendordeps
+          cp ../management/${{inputs.lesson_name}}/vendordeps/* vendordeps/
+
+          # Commit and push if there are changes
+          git add .vscode/ .wpilib/ gradle/ gradlew gradlew.bat build.gradle settings.gradle .gitignore *.md grading/ src/ vendordeps/
+
+          if git diff --staged --quiet; then
+            echo "✅ WPILib project files already exist and are up to date!"
+          else
+            git commit -m "chore: add WPILib project structure"
+            git push
+            echo "✅ WPILib project files created and committed!"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Repository Setup Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Target Repository:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Repository: ${{ needs.provision.outputs.repository_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lesson Name: ${{ inputs.lesson_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Year: ${{ needs.provision.outputs.year }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Applied Settings:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Repository Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Pull Request Template" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Devcontainer Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Git Hooks (pre-push)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ CI Workflow (build.yml)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ WPILib Project Structure (Gradle, VS Code, build files, swerve JSON config)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recommended Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **Enable Codespaces Prebuilds** (reduces startup from 5-10min to ~1min):" >> $GITHUB_STEP_SUMMARY
