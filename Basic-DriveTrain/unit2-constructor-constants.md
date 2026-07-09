@@ -28,11 +28,13 @@ In `CANDriveSubsystem.java`, **delete the placeholder `throw` statement** and re
 
 1. **Create the four TalonFX motor objects**, one for each field declared in Unit 1. Each takes the corresponding CAN ID constant from `DriveConstants` as its only constructor argument. Unlike SparkMax, TalonFX does not require a motor type parameter.
 
-2. **Build a `TalonFXConfiguration` object** and enable supply current limiting on it, using `DRIVE_MOTOR_CURRENT_LIMIT` from `DriveConstants`. The configuration is set through the `CurrentLimits` sub-object — you need to set both the limit value and the enable flag.
+2. **Build a `TalonFXConfiguration` object** and enable supply current limiting on it, using `DRIVE_MOTOR_CURRENT_LIMIT` from `DriveConstants`. The configuration is set through the `CurrentLimits` sub-object — you need to set both the limit value and the enable flag. On the same object, also set `MotorOutput.NeutralMode` to `NeutralModeValue.Brake`, so the drivetrain resists movement (instead of coasting) whenever no voltage is commanded.
 
 3. **Apply that configuration to all four motors** using each motor's `getConfigurator().apply(config)` method.
 
-4. **Declare and initialize the `DifferentialDrive` field.** First, add `private final DifferentialDrive drive;` to the class body (above the constructor, alongside the TalonFX fields from Unit 1). Then, inside the constructor, assign `drive = new DifferentialDrive(leftLeader, rightLeader)`. Only the leaders are passed — followers are wired up in Unit 3.
+   > **Keep this `config` object around:** in Unit 3 you'll reuse this same variable (rather than building a fresh one) to add the left-side inversion. Applying a brand-new `TalonFXConfiguration` would reset the current limit and neutral mode back to their defaults.
+
+4. **Declare and initialize the `DifferentialDrive` field.** First, add `private final DifferentialDrive drive;` to the class body (above the constructor, alongside the TalonFX fields from Unit 1). Then, inside the constructor, assign `drive = new DifferentialDrive(leftLeader::set, rightLeader::set)`. Only the leaders are passed — followers are wired up in Unit 3.
 
 > **Why only leader motors in DifferentialDrive?** `DifferentialDrive` only needs the leader motors. The followers are controlled separately via the `Follower` control class (set up in Unit 3). This keeps `DifferentialDrive` simple and lets you manage follower logic explicitly.
 
@@ -42,6 +44,7 @@ You will need imports for the following classes at the top of `CANDriveSubsystem
 
 - `TalonFXConfiguration` — from `com.ctre.phoenix6.configs`
 - `TalonFX` — from `com.ctre.phoenix6.hardware` (if not already added in Unit 1)
+- `NeutralModeValue` — from `com.ctre.phoenix6.signals`
 - `DifferentialDrive` — from `edu.wpi.first.wpilibj.drive`
 - `SubsystemBase` — from `edu.wpi.first.wpilibj2.command`
 
@@ -54,6 +57,7 @@ See the [full TalonFX subsystem example](../../docs/code_examples/2026KitBotInli
 - **Constants** — centralizes all tunable values in one place, making it easy to adjust CAN IDs or current limits without hunting through code
 - **TalonFXConfiguration** — safely configures the motor before the robot runs; current limits protect hardware
 - **Current Limits** — prevent breaker trips and motor overheating by capping the maximum current draw
+- **Brake Neutral Mode** — makes the drivetrain hold its position and resist being pushed when no voltage is commanded, instead of coasting freely
 
 ## Testing
 
