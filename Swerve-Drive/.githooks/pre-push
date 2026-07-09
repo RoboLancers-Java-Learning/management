@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "*********************************************************"
+echo "Running git pre-push hook. Submitting lesson..."
+echo "*********************************************************"
+
+gh student submit
+
+exit 0
