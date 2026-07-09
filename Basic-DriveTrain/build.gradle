@@ -78,6 +78,15 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+
+    // Scope the test run to a single unit, e.g. `./gradlew test -Punit=1` only
+    // runs frc.robot.Unit1*Test. Used by .githooks/pre-push to match the tests
+    // run against the "Unit N" prefix in the commit message being pushed.
+    if (project.hasProperty('unit')) {
+        filter {
+            includeTestsMatching "frc.robot.Unit${project.property('unit')}*"
+        }
+    }
 }
 
 // Simulation configuration (e.g. environment variables).

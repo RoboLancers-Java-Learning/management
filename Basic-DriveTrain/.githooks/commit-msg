@@ -1,0 +1,17 @@
+#!/bin/bash
+# Enforce that every commit message starts with "Unit #" (1-4), case-insensitive.
+# e.g. "Unit 1: declare fields", "unit3 fix", "UNIT 4 - bindings".
+
+COMMIT_MSG_FILE="$1"
+SUBJECT="$(head -n1 "$COMMIT_MSG_FILE")"
+
+if ! echo "$SUBJECT" | grep -qE '^[Uu][Nn][Ii][Tt][[:space:]]*[1-4]([^0-9]|$)'; then
+  echo "*********************************************************" >&2
+  echo "Commit rejected: message must start with \"Unit #\" (1-4)." >&2
+  echo "Got: \"$SUBJECT\"" >&2
+  echo "Example: \"Unit 1: declare TalonFX fields\"" >&2
+  echo "*********************************************************" >&2
+  exit 1
+fi
+
+exit 0

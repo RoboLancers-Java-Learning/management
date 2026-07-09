@@ -7,9 +7,9 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 // TODO Unit 1: Add import for TalonFX using VSCode quick-fix (Ctrl+.)
-// TODO Unit 2: Add imports for TalonFXConfiguration and DifferentialDrive
+// TODO Unit 2: Add imports for TalonFXConfiguration, NeutralModeValue, and DifferentialDrive
 // TODO Unit 2: Add static import for DriveConstants: import static frc.robot.Constants.DriveConstants.*;
-// TODO Unit 3: Add imports for Follower and InvertedValue
+// TODO Unit 3: Add imports for Follower, MotorAlignmentValue, and InvertedValue
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.DoubleSupplier;
 
