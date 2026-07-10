@@ -158,8 +158,8 @@ jobs:
           # Create .devcontainer directory if it doesn't exist
           mkdir -p .devcontainer
 
-          # Copy devcontainer from templates directory
-          cp -r ../management/${{inputs.lesson_name}}/.devcontainer .
+          # Copy the shared devcontainer configuration (same for all WPILib lessons)
+          cp -r ../management/shared-devcontainer/.devcontainer .
 
           # Add devcontainer.json to git
           git add .devcontainer
@@ -330,8 +330,8 @@ jobs:
           # Create .devcontainer directory if it doesn't exist
           mkdir -p .devcontainer
 
-          # Copy devcontainer from templates directory
-          cp -r ../management/${{inputs.lesson_name}}/.devcontainer .
+          # Copy the shared devcontainer configuration (same for all WPILib lessons)
+          cp -r ../management/shared-devcontainer/.devcontainer .
 
           # Add devcontainer.json to git
           git add .devcontainer
