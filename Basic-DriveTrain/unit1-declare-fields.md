@@ -32,7 +32,7 @@ See the **Declaring Motor Variables** section of the [Driving Robot tutorial](..
 
 ## Key Concepts
 
-**Motor Controller Interface:** TalonFX implements WPILib's `MotorController` interface, which defines methods like `set()`, `setVoltage()`, and `get()`. This allows `DifferentialDrive` to work with TalonFX the same way it works with SparkMax.
+**Motor Controller Interface:** Unlike SparkMax, TalonFX does **not** implement WPILib's `MotorController` interface. Because of this, `DifferentialDrive` can't take a `TalonFX` object directly — instead, in Unit 2 you'll pass method references (`leftLeader::set`, `rightLeader::set`) to `DifferentialDrive`'s constructor, matching its `DoubleConsumer`-based overload.
 
 ## Verification
 

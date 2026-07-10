@@ -22,7 +22,7 @@
     "--shm-size=2g",
     "-e", "DISPLAY=:1"
   ],
-  
+
   "forwardPorts": [6080, 5901],
   "customizations": {
     "vscode": {

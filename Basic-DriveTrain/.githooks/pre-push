@@ -1,8 +1,26 @@
 #!/bin/bash
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+MSG="$(git log -1 --pretty=%s)"
+
+# "Unit 1: ..." / "Unit1 ..." / "unit 1 ..." -> 1
+UNIT="$(echo "$MSG" | grep -oE '^[Uu]nit[[:space:]]*[0-9]+' | grep -oE '[0-9]+')"
+
 echo "*********************************************************"
-echo "Running git pre-push hook. Submitting lesson..."
+if [ -n "$UNIT" ]; then
+  echo "Commit message starts with \"Unit $UNIT\" - running Unit $UNIT tests only."
+  echo "*********************************************************"
+  ./gradlew test -Punit="$UNIT"
+else
+  echo "No \"Unit N\" prefix found in commit message - running full test suite."
+  echo "*********************************************************"
+  ./gradlew test
+fi
+
+echo "*********************************************************"
+echo "Tests passed. Proceeding with push."
 echo "*********************************************************"
 
-gh student submit
-
-exit 0

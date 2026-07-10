@@ -12,19 +12,21 @@
 
 ## Part 1: Set Up Follower Motors
 
-At the end of the constructor (after applying the current limit configuration), tell the right follower to follow the right leader, and the left follower to follow the left leader. Use Phoenix 6's `Follower` control class and each motor's `setControl()` method. Pass the leader's CAN ID constant and `false` for the invert parameter — the follower should mirror the leader's direction exactly.
+At the end of the constructor (after applying the current limit configuration), tell the right follower to follow the right leader, and the left follower to follow the left leader. Use Phoenix 6's `Follower` control class and each motor's `setControl()` method. Pass the leader's CAN ID constant and `MotorAlignmentValue.Aligned` for the alignment parameter — this tells the follower it is mechanically oriented the same way as its leader, so it should mirror the leader's commanded direction (including any inversion applied to the leader) rather than spin the opposite way.
 
 > **Follower Persistence:** In Phoenix 6, the follower configuration persists even after the motor is powered off. Once set, the follower will automatically track the leader without requiring code to be rerun.
 
-You will need to import `Follower` from `com.ctre.phoenix6.controls`.
+You will need to import `Follower` from `com.ctre.phoenix6.controls` and `MotorAlignmentValue` from `com.ctre.phoenix6.signals`.
 
 ## Part 2: Invert the Left Side
 
-After the follower setup, create a second `TalonFXConfiguration` for the left motors and set its `MotorOutput.Inverted` field to `InvertedValue.Clockwise_Positive`. Apply this configuration to both `leftLeader` and `leftFollower` using their `getConfigurator().apply()` methods.
+After the follower setup, reuse the **same `config` object** you built in Unit 2 (don't create a new `TalonFXConfiguration`) and set its `MotorOutput.Inverted` field to `InvertedValue.Clockwise_Positive`. Apply this updated configuration to `leftLeader` using its `getConfigurator().apply()` method.
 
-> **Why Invert?** On a typical FRC robot, the left and right drivetrains spin in opposite directions. Without inversion, positive voltage applied to both sides would turn the robot in a circle instead of driving it straight. Inverting the left side ensures both sides push the robot in the same direction when the same voltage is applied.
+> **Why reuse the same `config` object?** A freshly-constructed `TalonFXConfiguration` has every field at its default value. If you applied a brand-new configuration here, it would silently reset the current limit and neutral mode you set in Unit 2 back to their defaults — re-exposing the motor to the breaker-trip and overheating risks those settings were meant to prevent. Mutating and reapplying the existing `config` object keeps those settings intact while adding the inversion.
+>
+> **Why Invert?** On a typical FRC robot, the left and right drivetrains spin in opposite directions. Without inversion, positive voltage applied to both sides would turn the robot in a circle instead of driving it straight. Inverting the left side ensures both sides push the robot in the same direction when the same voltage is applied. Because the left follower was already set up with `MotorAlignmentValue.Aligned` in Part 1, it automatically mirrors the leader's new inverted direction — you don't need to reapply the configuration to `leftFollower`.
 
-You will need to import `InvertedValue` from `com.ctre.phoenix6.signals`.
+You will need to import `InvertedValue` from `com.ctre.phoenix6.signals` (if not already imported).
 
 See the **Configuring Motor Controllers** section of the [Driving Robot tutorial](../../docs/programming/driving_robot.md) for the TalonFX inversion and follower patterns, and the [full TalonFX subsystem example](../../docs/code_examples/2026KitBotInlineTalonFX/subsystems/CANDriveSubsystem.java) to check your complete constructor.
 

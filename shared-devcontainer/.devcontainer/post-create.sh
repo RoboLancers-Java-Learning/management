@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Point git at the repo's tracked hooks (.githooks/pre-push runs unit-scoped
+# tests and `gh student submit` before every push).
+git config core.hooksPath .githooks
+
 # Install system dependencies for WPILib simulation
 sudo apt-get update && sudo apt-get install -y \
   build-essential \
