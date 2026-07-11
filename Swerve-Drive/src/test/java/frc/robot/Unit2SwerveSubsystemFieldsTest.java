@@ -82,8 +82,11 @@ class Unit2SwerveSubsystemFieldsTest {
 
     @Test
     @DisplayName("Unit 2: getSwerveDrive() returns a non-null SwerveDrive after construction")
-    void getSwerveDriveReturnsNonNull() {
+    void getSwerveDriveReturnsNonNull() throws ReflectiveOperationException {
         assertNotNull(subsystem, "SwerveSubsystem failed to construct — see the constructorDoesNotThrow test");
-        assertNotNull(subsystem.getSwerveDrive(), "getSwerveDrive() must return the swerveDrive field initialized in the constructor");
+        Method m = SwerveSubsystem.class.getDeclaredMethod("getSwerveDrive");
+        assertNotNull(
+                m.invoke(subsystem),
+                "getSwerveDrive() must return the swerveDrive field initialized in the constructor");
     }
 }
